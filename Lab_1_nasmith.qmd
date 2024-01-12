@@ -1,0 +1,92 @@
+---
+title: "Lab 1"
+author: "Natalie Smith"
+format:
+  html:
+    code-fold: true
+    toc: true
+excecute: 
+  echo: true
+  message: false
+  warning: false
+editor: visual
+---
+
+```{r setup}
+library(tidyverse)
+library (here)
+library(sf)
+library(tmap)
+library(ggplot2)
+```
+
+SHORTCUTS:
+
+-   command option i - creates a code chunk
+-   command shift return - run everything inside the code chunk
+
+```{r load data}
+sfo_trees_df <- read_csv(here('data', 'sfo_trees', 'sfo_trees.csv')) %>% 
+  janitor::clean_names()
+
+```
+
+# Part 1: data exploration and wrangling review
+
+## Example 1:
+
+Find counts of observations by 'legal_status', then select the statuses with the five highest tree counts.
+
+### Pseudocode
+grouping by legal status
+summarize by tree count 
+
+```{r}
+sfo_trees_df %>%  
+  group_by(legal_status) %>% 
+  summarize(tree_count= n())
+
+top_5_status <- sfo_trees_df %>% 
+  filter(!is.na(legal_status)) %>% 
+   group_by(legal_status) %>% 
+  summarize(tree_count= n()) %>% 
+  ungroup() %>% 
+  slice_max(tree_count,n = 5)
+  
+```
+
+Make a ggplot of the top 5 observations from above: 
+
+```{r}
+library(ggplot2)
+
+top_5_plot <- ggplot(top_5_status, aes(x = legal_status, y = tree_count))+
+  geom_col()+
+  theme_bw()+
+  ggtitle("Top 5 Status")
+top_5_plot
+
+top_5_plot <- ggplot(top_5_status, aes(y = fct_reorder(legal_status, tree_count),
+                                       x = tree_count))+
+  geom_col(fill="grey")+
+  ggtitle("Top 5 Status")+
+  labs(x="Tree Count", y="Legal Status")+
+  theme_minimal()
+top_5_plot
+
+
+
+
+```
+## Example 2
+
+Only keep observations where legal status is "Permitted Site" and caretakes is "MTA"or "DWP. Store as "permitted_mta_dpw"
+
+### Pseudocode
+Filter to keep observation with permitted site and categories
+
+```{r}
+
+
+```
+
