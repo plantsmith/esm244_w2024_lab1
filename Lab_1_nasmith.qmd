@@ -68,7 +68,7 @@ top_5_plot
 
 top_5_plot <- ggplot(top_5_status, aes(y = fct_reorder(legal_status, tree_count),
                                        x = tree_count))+
-  geom_col(fill="grey")+
+  geom_col(fill="skyblue")+
   ggtitle("Top 5 Status")+
   labs(x="Tree Count", y="Legal Status")+
   theme_minimal()
@@ -86,7 +86,67 @@ Only keep observations where legal status is "Permitted Site" and caretakes is "
 Filter to keep observation with permitted site and categories
 
 ```{r}
+permitted_mta_dpw <- sfo_trees_df %>% 
+  filter(legal_status == "Permitted Site" & caretaker %in% c('MTA','DPW'))
+```
 
+Only keep observations oak and pine trees, then only keep columns "species", "legal_status", "plant_date", and "latitude" and "longitude". For each tree, not whether its an oak or pine. 
+
+### Pseudocode
+Filter oak and pine tree - but the species are complicated. select columns as needed
+mutate a new column for oak and pine
+
+```{r}
+oak_pine_df <- sfo_trees_df %>% 
+  filter(str_detect(species,"Oak")|str_detect(species,"Pine")) %>% 
+  select(species, legal_status,plant_date,latitude,longitude) %>% 
+  mutate(type = ifelse(str_detect(species,"Oak"),'oak','pine'))
 
 ```
+
+```{r}
+ggplot(data=oak_pine_df,aes(x= longitude, y= latitude, color = type))+
+  geom_point()+
+  theme_minimal()+
+  theme(axis.title=element_blank())+
+  labs(color = "Tree Type" ,
+       caption = "Location of Oaks and Pines in SF")
+
+
+library(ggplot2)
+
+ggplot(data = oak_pine_df, aes(x = longitude, y = latitude, color = type)) +
+  geom_point() +
+  theme_minimal() +
+  theme(axis.title = element_blank()) +
+  labs(color = "Tree Type", caption = "Location of Oaks and Pines in SF") +
+  scale_color_manual(values = c("orange", "blue")) 
+
+```
+
+Load a list of CA native species
+
+```{r}
+ca_native_df <- read_csv(here('data/sfo_trees/ca_native_spp.csv'))
+```
+How can we compare the CA native species to those in our SF trees database? Add a column nothing wheather a tree is native or not. We'll need the common and scientific names separated!
+
+```{r}
+sfo_trees_native <- sfo_trees_df %>% 
+  separate(species, into = c('spp_sci','spp_common'), sep= ' :: ') %>% 
+  select(starts_with('spp'), 'plant_date',
+         'legal_status',
+         'longitude', 
+         'latitude') %>% 
+  mutate(ca_native = (spp_sci %in% ca_native_df$scientific_name))
+```
+
+```{r}
+sfo_native_status <- sfo_trees_native %>% 
+  group_by(legal_status, ca_native) %>% 
+  summarize(n_trees = n(),
+            n_species = n_distinct(spp_sci))
+```
+
+
 
